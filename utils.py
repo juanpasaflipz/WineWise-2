@@ -66,35 +66,33 @@ def initialize_pinecone():
 def query_by_metadata(index, metadata_filters, top_k=5):
     try:
         # Filter out empty values and prepare filters
-        filters = {}
+        filter_conditions = {}
         
-        # Handle text-based fields with exact matching
         if metadata_filters.get("wine_name"):
-            # Simple exact match on the DISPLAY_NAME field
-            filters["DISPLAY_NAME"] = metadata_filters["wine_name"]
+            # Use $eq operator for exact match
+            filter_conditions["DISPLAY_NAME"] = {"$eq": metadata_filters["wine_name"]}
             
-        # Handle exact match fields
         if metadata_filters.get("region"):
-            filters["REGION"] = metadata_filters["region"]
+            filter_conditions["REGION"] = {"$eq": metadata_filters["region"]}
         if metadata_filters.get("country"):
-            filters["COUNTRY"] = metadata_filters["country"]
+            filter_conditions["COUNTRY"] = {"$eq": metadata_filters["country"]}
         if metadata_filters.get("type"):
-            filters["TYPE"] = metadata_filters["type"]
+            filter_conditions["TYPE"] = {"$eq": metadata_filters["type"]}
         if metadata_filters.get("color"):
-            filters["COLOUR"] = metadata_filters["color"]
+            filter_conditions["COLOUR"] = {"$eq": metadata_filters["color"]}
             
-        st.write("Debug: Applying metadata filters:", filters)
+        st.write("Debug: Applying metadata filters:", filter_conditions)
         
-        if not filters:
+        if not filter_conditions:
             st.warning("Please enter at least one search criterion")
             return None
             
         # Query with metadata filtering
         query_response = index.query(
-            vector=[0] * 384,  # Dummy vector since we're filtering by metadata
+            vector=[0] * 384,
             top_k=top_k,
             include_metadata=True,
-            filter=filters
+            filter=filter_conditions
         )
         
         st.write("Debug: Query Response Structure:")
