@@ -9,15 +9,15 @@ from utils import (
 from styles import apply_custom_styles
 
 def main():
-    # Apply custom styles
-    apply_custom_styles()
-    
-    # Page configuration
+    # Page configuration must be the first Streamlit command
     st.set_page_config(
         page_title="Wine Recommendations",
         page_icon="🍷",
         layout="wide"
     )
+    
+    # Apply custom styles after page configuration
+    apply_custom_styles()
     
     st.title("🍷 Wine Recommendation System")
     

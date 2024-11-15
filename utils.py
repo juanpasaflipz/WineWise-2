@@ -7,14 +7,39 @@ import os
 def initialize_pinecone():
     """Initialize Pinecone client with error handling"""
     try:
-        pinecone.init(
-            api_key=os.environ['PINECONE_API_KEY'],
-            environment='gcp-starter'
+        # Initialize Pinecone using the new method
+        pinecone_client = pinecone.Pinecone(
+            api_key=os.environ['PINECONE_API_KEY']
         )
-        index = pinecone.Index('wine-embeddings-1eowpvt')
-        return index
+        
+        # List available indexes to debug
+        try:
+            indexes = pinecone_client.list_indexes()
+            if not indexes:
+                st.error("No indexes found in your Pinecone account. Please create an index first.")
+                return None
+            
+            # Convert IndexModel objects to a list of index names
+            index_names = [index.name for index in indexes]
+            st.write("Available indexes:", index_names)
+            
+            # Get the index if it exists
+            target_index = 'wine-embeddings-1eowpvt'
+            if target_index in index_names:
+                index = pinecone_client.Index(target_index)
+                return index
+            else:
+                st.error(f"Index '{target_index}' not found. Available indexes: {', '.join(index_names)}")
+                return None
+                
+        except Exception as idx_error:
+            st.error(f"Error accessing indexes: {str(idx_error)}")
+            return None
+            
     except Exception as e:
         st.error(f"Failed to connect to Pinecone: {str(e)}")
+        if 'PINECONE_API_KEY' not in os.environ:
+            st.error("PINECONE_API_KEY environment variable is not set")
         return None
 
 def query_similar_wines(index, wine_id, top_k=5):
