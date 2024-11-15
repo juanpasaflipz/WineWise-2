@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from utils import (
     initialize_pinecone,
-    query_similar_wines,
+    query_by_metadata,
     create_similarity_plot,
     format_wine_details
 )
@@ -34,12 +34,36 @@ def main():
     # Sidebar for search options
     with st.sidebar:
         st.header("Search Options")
-        st.write("Enter a wine ID to find similar wines.")
+        st.write("Search for wines using any combination of criteria below.")
         
-        wine_id = st.text_input(
-            "Enter Wine ID",
-            placeholder="e.g., 0",
-            help="Enter the ID of the wine you want to find similar wines for"
+        wine_name = st.text_input(
+            "Wine Name",
+            placeholder="Enter wine name",
+            help="Enter full or partial wine name"
+        )
+        
+        region = st.text_input(
+            "Region",
+            placeholder="Enter wine region",
+            help="Enter the wine region"
+        )
+        
+        country = st.text_input(
+            "Country",
+            placeholder="Enter country",
+            help="Enter the country of origin"
+        )
+        
+        wine_type = st.selectbox(
+            "Type",
+            options=["", "Red", "White", "Rosé", "Sparkling"],
+            help="Select the type of wine"
+        )
+        
+        wine_color = st.selectbox(
+            "Color",
+            options=["", "Red", "White", "Rosé", "Gold"],
+            help="Select the color of wine"
         )
         
         num_recommendations = st.slider(
@@ -50,27 +74,37 @@ def main():
         )
     
     # Main content
-    if wine_id:
-        with st.spinner("Finding similar wines..."):
-            results = query_similar_wines(index, wine_id, num_recommendations)
+    # Create metadata filters
+    metadata_filters = {
+        "wine_name": wine_name,
+        "region": region,
+        "country": country,
+        "type": wine_type,
+        "color": wine_color
+    }
+    
+    # Check if any search criteria are provided
+    if any(metadata_filters.values()):
+        with st.spinner("Finding matching wines..."):
+            results = query_by_metadata(index, metadata_filters, num_recommendations)
             
             if results and results.matches:
-                st.success(f"Found {len(results.matches)} similar wines!")
+                st.success(f"Found {len(results.matches)} matching wines!")
                 
                 # Create two columns for layout
                 col1, col2 = st.columns([2, 1])
                 
                 with col1:
-                    st.subheader("Similar Wines")
+                    st.subheader("Matching Wines")
                     
-                    # Display similar wines
+                    # Display matching wines
                     for match in results.matches:
                         with st.container():
                             st.markdown(
                                 f"""
                                 <div class="wine-card">
                                     <h3>{match.metadata.get('wine_name', 'Unknown Wine')}</h3>
-                                    <p class="similarity-score">Similarity: {match.score:.2f}</p>
+                                    <p class="similarity-score">Match Score: {match.score:.2f}</p>
                                 </div>
                                 """,
                                 unsafe_allow_html=True
@@ -83,25 +117,27 @@ def main():
                             st.divider()
                 
                 with col2:
-                    st.subheader("Similarity Visualization")
+                    st.subheader("Match Score Visualization")
                     # Create and display similarity plot
                     similarities = [match.score for match in results.matches]
                     fig = create_similarity_plot(similarities)
                     st.plotly_chart(fig, use_container_width=True)
             
             else:
-                st.warning("No similar wines found. Please try a different wine ID.")
+                st.warning("No matching wines found. Please try different search criteria.")
     
     else:
-        st.info("👈 Enter a wine ID in the sidebar to get started!")
+        st.info("👈 Enter search criteria in the sidebar to find wines!")
         
         # Example section
         with st.expander("Need help getting started?"):
             st.write("""
-                Try using one of these example wine IDs:
-                - 0
-                - 1
-                - 2
+                Try searching with these example criteria:
+                - Wine Type: Red
+                - Country: France
+                - Region: Burgundy
+                
+                Or just enter a wine name to search by name only!
             """)
     
     # Footer

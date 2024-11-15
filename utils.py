@@ -63,39 +63,38 @@ def initialize_pinecone():
         st.write("Error details:", str(e.__class__.__name__))
         return None
 
-def query_similar_wines(index, wine_id, top_k=5):
-    """Query Pinecone for similar wines"""
+def query_by_metadata(index, metadata_filters, top_k=5):
+    """Query Pinecone using metadata filters"""
     try:
-        st.write(f"Querying for wine ID: {wine_id}")
-        # Add debug information before query
-        st.write("Debug: Query parameters:")
-        st.write({
-            "wine_id": wine_id,
-            "top_k": top_k,
-            "include_metadata": True
-        })
+        # Filter out empty values from metadata_filters
+        filters = {k: v for k, v in metadata_filters.items() if v}
         
+        if not filters:
+            st.warning("Please enter at least one search criterion")
+            return None
+            
+        st.write("Debug: Applying metadata filters:", filters)
+        
+        # Query with metadata filtering
         query_response = index.query(
-            id=wine_id,
+            vector=[0] * 384,  # Dummy vector since we're filtering by metadata
             top_k=top_k,
-            include_metadata=True
+            include_metadata=True,
+            filter=filters
         )
         
-        # Add detailed debug information about the response structure
+        # Add debug information about the response
         st.write("Debug: Query Response Structure:")
         st.write("Response type:", type(query_response))
         st.write("Number of matches:", len(query_response.matches))
         
         if query_response.matches:
-            st.write("First match type:", type(query_response.matches[0]))
             st.write("First match metadata:", query_response.matches[0].metadata)
             st.write("First match score:", query_response.matches[0].score)
-        else:
-            st.warning("No matches found in the response")
-            
+        
         return query_response
     except Exception as e:
-        st.error(f"Error querying similar wines: {str(e)}")
+        st.error(f"Error querying wines: {str(e)}")
         st.write("Error details:", str(e.__class__.__name__))
         return None
 
