@@ -68,9 +68,10 @@ def query_by_metadata(index, metadata_filters, top_k=5):
         # Filter out empty values and prepare filters
         filters = {}
         
-        # Handle text-based fields with case-insensitive partial matching
+        # Handle text-based fields with exact matching
         if metadata_filters.get("wine_name"):
-            filters["DISPLAY_NAME"] = {"$containsStr": metadata_filters["wine_name"].lower()}
+            # Simple exact match on the DISPLAY_NAME field
+            filters["DISPLAY_NAME"] = metadata_filters["wine_name"]
             
         # Handle exact match fields
         if metadata_filters.get("region"):
@@ -95,6 +96,11 @@ def query_by_metadata(index, metadata_filters, top_k=5):
             include_metadata=True,
             filter=filters
         )
+        
+        st.write("Debug: Query Response Structure:")
+        st.write("Number of matches:", len(query_response.matches))
+        if query_response.matches:
+            st.write("First match metadata:", query_response.matches[0].metadata)
         
         return query_response
         
