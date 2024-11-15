@@ -23,6 +23,8 @@ def initialize_pinecone():
         try:
             st.write("Fetching available indexes...")
             indexes = pinecone_client.list_indexes()
+            st.write("Raw indexes response:", type(indexes))  # Debug line
+            
             if not indexes:
                 st.error("No indexes found in your Pinecone account. Please create an index first.")
                 return None
@@ -37,68 +39,106 @@ def initialize_pinecone():
             
             if target_index in index_names:
                 index = pinecone_client.Index(target_index)
-                st.success("Successfully connected to Pinecone index!")
-                return index
+                # Test index connection
+                try:
+                    # Attempt to describe index statistics
+                    stats = index.describe_index_stats()
+                    st.write("Index statistics:", stats)
+                    st.success("Successfully connected to Pinecone index!")
+                    return index
+                except Exception as stats_error:
+                    st.error(f"Error getting index statistics: {str(stats_error)}")
+                    return None
             else:
                 st.error(f"Index '{target_index}' not found. Available indexes: {', '.join(index_names)}")
                 return None
                 
         except Exception as idx_error:
             st.error(f"Error accessing indexes: {str(idx_error)}")
+            st.write("Error details:", str(idx_error.__class__.__name__))
             return None
             
     except Exception as e:
         st.error(f"Failed to connect to Pinecone: {str(e)}")
+        st.write("Error details:", str(e.__class__.__name__))
         return None
 
 def query_similar_wines(index, wine_id, top_k=5):
     """Query Pinecone for similar wines"""
     try:
         st.write(f"Querying for wine ID: {wine_id}")
+        # Add debug information before query
+        st.write("Debug: Query parameters:")
+        st.write({
+            "wine_id": wine_id,
+            "top_k": top_k,
+            "include_metadata": True
+        })
+        
         query_response = index.query(
             id=wine_id,
             top_k=top_k,
             include_metadata=True
         )
+        
+        # Add detailed debug information about the response structure
+        st.write("Debug: Query Response Structure:")
+        st.write("Response type:", type(query_response))
+        st.write("Number of matches:", len(query_response.matches))
+        
+        if query_response.matches:
+            st.write("First match type:", type(query_response.matches[0]))
+            st.write("First match metadata:", query_response.matches[0].metadata)
+            st.write("First match score:", query_response.matches[0].score)
+        else:
+            st.warning("No matches found in the response")
+            
         return query_response
     except Exception as e:
         st.error(f"Error querying similar wines: {str(e)}")
+        st.write("Error details:", str(e.__class__.__name__))
         return None
 
 def create_similarity_plot(similarities):
     """Create a radar chart for wine similarities"""
-    labels = [f"Wine {i+1}" for i in range(len(similarities))]
-    
-    fig = go.Figure(data=go.Scatterpolar(
-        r=similarities,
-        theta=labels,
-        fill='toself',
-        line_color='#722F37'
-    ))
+    try:
+        labels = [f"Wine {i+1}" for i in range(len(similarities))]
+        
+        fig = go.Figure(data=go.Scatterpolar(
+            r=similarities,
+            theta=labels,
+            fill='toself',
+            line_color='#722F37'
+        ))
 
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 1]
-            )
-        ),
-        showlegend=False,
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        margin=dict(l=40, r=40, t=40, b=40)
-    )
-    
-    return fig
+        fig.update_layout(
+            polar=dict(
+                radialaxis=dict(
+                    visible=True,
+                    range=[0, 1]
+                )
+            ),
+            showlegend=False,
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            margin=dict(l=40, r=40, t=40, b=40)
+        )
+        return fig
+    except Exception as e:
+        st.error(f"Error creating similarity plot: {str(e)}")
+        return None
 
 def format_wine_details(metadata):
     """Format wine metadata for display"""
-    return {
-        "Name": metadata.get("name", "Unknown"),
-        "Variety": metadata.get("variety", "Unknown"),
-        "Winery": metadata.get("winery", "Unknown"),
-        "Region": metadata.get("region", "Unknown"),
-        "Country": metadata.get("country", "Unknown"),
-        "Price": f"${metadata.get('price', 'N/A')}",
-        "Points": metadata.get("points", "N/A")
-    }
+    try:
+        return {
+            "Name": metadata.get("wine_name", "Unknown"),
+            "Producer": metadata.get("producer", "Unknown"),
+            "Type": metadata.get("type", "Unknown"),
+            "Color": metadata.get("color", "Unknown"),
+            "Region": metadata.get("region", "Unknown"),
+            "Country": metadata.get("country", "Unknown")
+        }
+    except Exception as e:
+        st.error(f"Error formatting wine details: {str(e)}")
+        return {}

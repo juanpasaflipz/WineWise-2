@@ -1,0 +1,117 @@
+import pickle
+import os
+from pinecone import Pinecone, ServerlessSpec
+from tqdm import tqdm  # For progress bar
+
+# Initialize Pinecone
+pc = Pinecone(
+    api_key=os.getenv("PINECONE_API_KEY")
+)
+
+# Use hyphen instead of underscore in index name
+INDEX_NAME = 'wine-embeddings'
+
+def delete_index_if_exists():
+    if INDEX_NAME in pc.list_indexes().names():
+        print(f"Deleting existing index '{INDEX_NAME}'...")
+        pc.delete_index(INDEX_NAME)
+        print("Index deleted successfully")
+
+def create_index():
+    print(f"Creating new index '{INDEX_NAME}'...")
+    pc.create_index(
+        name=INDEX_NAME,
+        dimension=384,  # Changed from 1536 to 384 to match your embeddings
+        metric='euclidean',
+        spec=ServerlessSpec(
+            cloud='aws',
+            region='us-east-1'
+        )
+    )
+    print("Index created successfully")
+    # Wait for index to be ready
+    print("Waiting for index to initialize...")
+    import time
+    time.sleep(60)  # Wait 60 seconds for index to be ready
+
+def prepare_vectors(df, batch_size=100):
+    """Prepare vectors in batches"""
+    total_vectors = len(df)
+    batches = []
+    current_batch = []
+    
+    for idx in range(total_vectors):
+        if df['embedding'].iloc[idx] is not None:  # Check for valid embedding
+            vector = {
+                "id": str(idx),
+                "values": df['embedding'].iloc[idx],
+                "metadata": {
+                    "wine_name": str(df['DISPLAY_NAME'].iloc[idx]),
+                    "producer": str(df['PRODUCER_NAME'].iloc[idx]) if 'PRODUCER_NAME' in df.columns else "",
+                    "country": str(df['COUNTRY'].iloc[idx]) if 'COUNTRY' in df.columns else "",
+                    "region": str(df['REGION'].iloc[idx]) if 'REGION' in df.columns else "",
+                    "color": str(df['COLOUR'].iloc[idx]) if 'COLOUR' in df.columns else "",
+                    "type": str(df['TYPE'].iloc[idx]) if 'TYPE' in df.columns else ""
+                }
+            }
+            current_batch.append(vector)
+            
+            if len(current_batch) == batch_size:
+                batches.append(current_batch)
+                current_batch = []
+    
+    if current_batch:  # Add any remaining vectors
+        batches.append(current_batch)
+    
+    return batches
+
+def main():
+    try:
+        # First delete existing index if it exists
+        delete_index_if_exists()
+        
+        # Create new index with correct dimensions
+        create_index()
+        
+        # Get the index
+        index = pc.Index(INDEX_NAME)
+        
+        # Load embeddings
+        print("Loading embeddings from pickle file...")
+        with open('wine_embeddings.pkl', 'rb') as f:
+            df = pickle.load(f)
+        print(f"Loaded {len(df)} rows of data")
+        
+        # Verify embedding dimension
+        first_valid_embedding = next(emb for emb in df['embedding'] if emb is not None)
+        print(f"Embedding dimension: {len(first_valid_embedding)}")
+        
+        # Prepare vectors in batches
+        print("Preparing vectors for upload...")
+        batches = prepare_vectors(df)
+        print(f"Prepared {len(batches)} batches for upload")
+        
+        # Upload batches with progress bar
+        print("Uploading vectors to Pinecone...")
+        successful_uploads = 0
+        failed_uploads = 0
+        
+        for i, batch in enumerate(tqdm(batches)):
+            try:
+                index.upsert(vectors=batch)
+                successful_uploads += len(batch)
+            except Exception as e:
+                print(f"\nError uploading batch {i}: {e}")
+                failed_uploads += len(batch)
+                continue
+        
+        # Print summary
+        print("\nUpload complete!")
+        print(f"Successfully uploaded: {successful_uploads} vectors")
+        print(f"Failed uploads: {failed_uploads} vectors")
+        
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    main()

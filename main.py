@@ -38,7 +38,7 @@ def main():
         
         wine_id = st.text_input(
             "Enter Wine ID",
-            placeholder="e.g., wine_123",
+            placeholder="e.g., 0",
             help="Enter the ID of the wine you want to find similar wines for"
         )
         
@@ -69,7 +69,7 @@ def main():
                             st.markdown(
                                 f"""
                                 <div class="wine-card">
-                                    <h3>{match.metadata.get('name', 'Unknown Wine')}</h3>
+                                    <h3>{match.metadata.get('wine_name', 'Unknown Wine')}</h3>
                                     <p class="similarity-score">Similarity: {match.score:.2f}</p>
                                 </div>
                                 """,
@@ -99,9 +99,9 @@ def main():
         with st.expander("Need help getting started?"):
             st.write("""
                 Try using one of these example wine IDs:
-                - wine_123
-                - wine_456
-                - wine_789
+                - 0
+                - 1
+                - 2
             """)
     
     # Footer
