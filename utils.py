@@ -69,17 +69,18 @@ def query_by_metadata(index, metadata_filters, top_k=5):
         filter_conditions = {}
         
         if metadata_filters.get("wine_name"):
-            # Use $eq operator for exact match
-            filter_conditions["DISPLAY_NAME"] = {"$eq": metadata_filters["wine_name"]}
+            # Convert input to lowercase for case-insensitive matching
+            wine_name = metadata_filters["wine_name"].lower()
+            filter_conditions["DISPLAY_NAME"] = {"$in": [wine_name]}
             
         if metadata_filters.get("region"):
-            filter_conditions["REGION"] = {"$eq": metadata_filters["region"]}
+            filter_conditions["REGION"] = {"$in": [metadata_filters["region"]]}
         if metadata_filters.get("country"):
-            filter_conditions["COUNTRY"] = {"$eq": metadata_filters["country"]}
+            filter_conditions["COUNTRY"] = {"$in": [metadata_filters["country"]]}
         if metadata_filters.get("type"):
-            filter_conditions["TYPE"] = {"$eq": metadata_filters["type"]}
+            filter_conditions["TYPE"] = {"$in": [metadata_filters["type"]]}
         if metadata_filters.get("color"):
-            filter_conditions["COLOUR"] = {"$eq": metadata_filters["color"]}
+            filter_conditions["COLOUR"] = {"$in": [metadata_filters["color"]]}
             
         st.write("Debug: Applying metadata filters:", filter_conditions)
         
