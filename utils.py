@@ -64,22 +64,22 @@ def initialize_pinecone():
         return None
 
 def query_by_metadata(index, metadata_filters, top_k=5):
-    """Query wines by metadata using the exact field names and Pinecone filter syntax"""
+    """Query wines by metadata using the exact field names from the upload script"""
     try:
         # Filter out empty values and prepare filters
         filter_conditions = {}
         
         if metadata_filters.get("wine_name"):
-            filter_conditions["DISPLAY_NAME"] = {"$eq": metadata_filters["wine_name"]}
+            filter_conditions["wine_name"] = {"$eq": metadata_filters["wine_name"].lower()}
             
         if metadata_filters.get("region"):
-            filter_conditions["REGION"] = {"$eq": metadata_filters["region"]}
+            filter_conditions["region"] = {"$eq": metadata_filters["region"].lower()}
         if metadata_filters.get("country"):
-            filter_conditions["COUNTRY"] = {"$eq": metadata_filters["country"]}
+            filter_conditions["country"] = {"$eq": metadata_filters["country"].lower()}
         if metadata_filters.get("type"):
-            filter_conditions["TYPE"] = {"$eq": metadata_filters["type"]}
+            filter_conditions["type"] = {"$eq": metadata_filters["type"].lower()}
         if metadata_filters.get("color"):
-            filter_conditions["COLOUR"] = {"$eq": metadata_filters["color"]}
+            filter_conditions["color"] = {"$eq": metadata_filters["color"].lower()}
             
         st.write("Debug: Applying metadata filters:", filter_conditions)
         
@@ -141,12 +141,12 @@ def format_wine_details(metadata):
     """Format wine details using the exact field names from the upload script"""
     try:
         return {
-            "Name": metadata.get("DISPLAY_NAME", "Unknown"),
-            "Producer": metadata.get("PRODUCER_NAME", "Unknown"),
-            "Type": metadata.get("TYPE", "Unknown"),
-            "Color": metadata.get("COLOUR", "Unknown"),
-            "Region": metadata.get("REGION", "Unknown"),
-            "Country": metadata.get("COUNTRY", "Unknown")
+            "Name": metadata.get("wine_name", "Unknown"),
+            "Producer": metadata.get("producer", "Unknown"),
+            "Type": metadata.get("type", "Unknown"),
+            "Color": metadata.get("color", "Unknown"),
+            "Region": metadata.get("region", "Unknown"),
+            "Country": metadata.get("country", "Unknown")
         }
     except Exception as e:
         st.error(f"Error formatting wine details: {str(e)}")
