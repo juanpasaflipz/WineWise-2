@@ -70,16 +70,16 @@ def query_by_metadata(index, metadata_filters, top_k=5):
         filter_conditions = {}
         
         if metadata_filters.get("wine_name"):
-            filter_conditions["wine_name"] = {"$eq": metadata_filters["wine_name"].lower()}
+            filter_conditions["DISPLAY_NAME"] = {"$eq": metadata_filters["wine_name"].upper()}
             
         if metadata_filters.get("region"):
-            filter_conditions["region"] = {"$eq": metadata_filters["region"].lower()}
+            filter_conditions["REGION"] = {"$eq": metadata_filters["region"].upper()}
         if metadata_filters.get("country"):
-            filter_conditions["country"] = {"$eq": metadata_filters["country"].lower()}
+            filter_conditions["COUNTRY"] = {"$eq": metadata_filters["country"].upper()}
         if metadata_filters.get("type"):
-            filter_conditions["type"] = {"$eq": metadata_filters["type"].lower()}
+            filter_conditions["TYPE"] = {"$eq": metadata_filters["type"].upper()}
         if metadata_filters.get("color"):
-            filter_conditions["color"] = {"$eq": metadata_filters["color"].lower()}
+            filter_conditions["COLOUR"] = {"$eq": metadata_filters["color"].upper()}
             
         st.write("Debug: Applying metadata filters:", filter_conditions)
         
@@ -105,6 +105,7 @@ def query_by_metadata(index, metadata_filters, top_k=5):
     except Exception as e:
         st.error(f"Error querying wines: {str(e)}")
         st.write("Error details:", str(e.__class__.__name__))
+        filter_conditions = locals().get('filter_conditions', {})
         st.write("Debug - filters:", filter_conditions)
         return None
 
@@ -141,12 +142,12 @@ def format_wine_details(metadata):
     """Format wine details using the exact field names from the upload script"""
     try:
         return {
-            "Name": metadata.get("wine_name", "Unknown"),
-            "Producer": metadata.get("producer", "Unknown"),
-            "Type": metadata.get("type", "Unknown"),
-            "Color": metadata.get("color", "Unknown"),
-            "Region": metadata.get("region", "Unknown"),
-            "Country": metadata.get("country", "Unknown")
+            "Name": metadata.get("DISPLAY_NAME", "Unknown"),
+            "Producer": metadata.get("PRODUCER_NAME", "Unknown"),
+            "Type": metadata.get("TYPE", "Unknown"),
+            "Color": metadata.get("COLOUR", "Unknown"),
+            "Region": metadata.get("REGION", "Unknown"),
+            "Country": metadata.get("COUNTRY", "Unknown")
         }
     except Exception as e:
         st.error(f"Error formatting wine details: {str(e)}")
