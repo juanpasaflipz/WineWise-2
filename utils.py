@@ -69,18 +69,17 @@ def query_by_metadata(index, metadata_filters, top_k=5):
         filter_conditions = {}
         
         if metadata_filters.get("wine_name"):
-            # Convert input to lowercase for case-insensitive matching
-            wine_name = metadata_filters["wine_name"].lower()
-            filter_conditions["DISPLAY_NAME"] = wine_name
+            # Use exact field name from upload script
+            filter_conditions["DISPLAY_NAME"] = metadata_filters["wine_name"].upper()
             
         if metadata_filters.get("region"):
-            filter_conditions["REGION"] = metadata_filters["region"]
+            filter_conditions["REGION"] = metadata_filters["region"].upper()
         if metadata_filters.get("country"):
-            filter_conditions["COUNTRY"] = metadata_filters["country"]
+            filter_conditions["COUNTRY"] = metadata_filters["country"].upper()
         if metadata_filters.get("type"):
-            filter_conditions["TYPE"] = metadata_filters["type"]
+            filter_conditions["TYPE"] = metadata_filters["type"].upper()
         if metadata_filters.get("color"):
-            filter_conditions["COLOUR"] = metadata_filters["color"]
+            filter_conditions["COLOUR"] = metadata_filters["color"].upper()
             
         st.write("Debug: Applying metadata filters:", filter_conditions)
         
@@ -106,7 +105,7 @@ def query_by_metadata(index, metadata_filters, top_k=5):
     except Exception as e:
         st.error(f"Error querying wines: {str(e)}")
         st.write("Error details:", str(e.__class__.__name__))
-        st.write("Debug - filters:", filter_conditions)  # Add more debug info
+        st.write("Debug - filters:", filter_conditions)
         return None
 
 def create_similarity_plot(similarities):
