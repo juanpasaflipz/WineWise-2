@@ -64,17 +64,30 @@ def initialize_pinecone():
         return None
 
 def query_by_metadata(index, metadata_filters, top_k=5):
-    """Query Pinecone using metadata filters"""
     try:
-        # Filter out empty values from metadata_filters
-        filters = {k: v for k, v in metadata_filters.items() if v}
+        # Filter out empty values and prepare filters
+        filters = {}
+        
+        # Handle text-based fields with case-insensitive partial matching
+        if metadata_filters.get("wine_name"):
+            filters["DISPLAY_NAME"] = {"$containsStr": metadata_filters["wine_name"].lower()}
+            
+        # Handle exact match fields
+        if metadata_filters.get("region"):
+            filters["REGION"] = metadata_filters["region"]
+        if metadata_filters.get("country"):
+            filters["COUNTRY"] = metadata_filters["country"]
+        if metadata_filters.get("type"):
+            filters["TYPE"] = metadata_filters["type"]
+        if metadata_filters.get("color"):
+            filters["COLOUR"] = metadata_filters["color"]
+            
+        st.write("Debug: Applying metadata filters:", filters)
         
         if not filters:
             st.warning("Please enter at least one search criterion")
             return None
             
-        st.write("Debug: Applying metadata filters:", filters)
-        
         # Query with metadata filtering
         query_response = index.query(
             vector=[0] * 384,  # Dummy vector since we're filtering by metadata
@@ -83,16 +96,8 @@ def query_by_metadata(index, metadata_filters, top_k=5):
             filter=filters
         )
         
-        # Add debug information about the response
-        st.write("Debug: Query Response Structure:")
-        st.write("Response type:", type(query_response))
-        st.write("Number of matches:", len(query_response.matches))
-        
-        if query_response.matches:
-            st.write("First match metadata:", query_response.matches[0].metadata)
-            st.write("First match score:", query_response.matches[0].score)
-        
         return query_response
+        
     except Exception as e:
         st.error(f"Error querying wines: {str(e)}")
         st.write("Error details:", str(e.__class__.__name__))
@@ -128,15 +133,14 @@ def create_similarity_plot(similarities):
         return None
 
 def format_wine_details(metadata):
-    """Format wine metadata for display"""
     try:
         return {
-            "Name": metadata.get("wine_name", "Unknown"),
-            "Producer": metadata.get("producer", "Unknown"),
-            "Type": metadata.get("type", "Unknown"),
-            "Color": metadata.get("color", "Unknown"),
-            "Region": metadata.get("region", "Unknown"),
-            "Country": metadata.get("country", "Unknown")
+            "Name": metadata.get("DISPLAY_NAME", "Unknown"),
+            "Producer": metadata.get("PRODUCER_NAME", "Unknown"),
+            "Type": metadata.get("TYPE", "Unknown"),
+            "Color": metadata.get("COLOUR", "Unknown"),
+            "Region": metadata.get("REGION", "Unknown"),
+            "Country": metadata.get("COUNTRY", "Unknown")
         }
     except Exception as e:
         st.error(f"Error formatting wine details: {str(e)}")
