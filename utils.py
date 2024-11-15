@@ -64,22 +64,23 @@ def initialize_pinecone():
         return None
 
 def query_by_metadata(index, metadata_filters, top_k=5):
+    """Query wines by metadata using the exact field names from the upload script"""
     try:
         # Filter out empty values and prepare filters
         filter_conditions = {}
         
         if metadata_filters.get("wine_name"):
             # Use exact field name from upload script
-            filter_conditions["DISPLAY_NAME"] = metadata_filters["wine_name"].upper()
+            filter_conditions["DISPLAY_NAME"] = metadata_filters["wine_name"]
             
         if metadata_filters.get("region"):
-            filter_conditions["REGION"] = metadata_filters["region"].upper()
+            filter_conditions["REGION"] = metadata_filters["region"]
         if metadata_filters.get("country"):
-            filter_conditions["COUNTRY"] = metadata_filters["country"].upper()
+            filter_conditions["COUNTRY"] = metadata_filters["country"]
         if metadata_filters.get("type"):
-            filter_conditions["TYPE"] = metadata_filters["type"].upper()
+            filter_conditions["TYPE"] = metadata_filters["type"]
         if metadata_filters.get("color"):
-            filter_conditions["COLOUR"] = metadata_filters["color"].upper()
+            filter_conditions["COLOUR"] = metadata_filters["color"]
             
         st.write("Debug: Applying metadata filters:", filter_conditions)
         
@@ -138,6 +139,7 @@ def create_similarity_plot(similarities):
         return None
 
 def format_wine_details(metadata):
+    """Format wine details using the exact field names from the upload script"""
     try:
         return {
             "Name": metadata.get("DISPLAY_NAME", "Unknown"),
