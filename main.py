@@ -21,14 +21,21 @@ def main():
     
     st.title("🍷 Wine Recommendation System")
     
+    # Debug section
+    st.write("Initializing application...")
+    
     # Initialize Pinecone
-    index = initialize_pinecone()
-    if not index:
-        st.stop()
+    with st.spinner("Connecting to Pinecone..."):
+        index = initialize_pinecone()
+        if not index:
+            st.error("Failed to initialize Pinecone. Please check the error messages above.")
+            st.stop()
     
     # Sidebar for search options
     with st.sidebar:
         st.header("Search Options")
+        st.write("Enter a wine ID to find similar wines.")
+        
         wine_id = st.text_input(
             "Enter Wine ID",
             placeholder="e.g., wine_123",
@@ -48,6 +55,8 @@ def main():
             results = query_similar_wines(index, wine_id, num_recommendations)
             
             if results and results.matches:
+                st.success(f"Found {len(results.matches)} similar wines!")
+                
                 # Create two columns for layout
                 col1, col2 = st.columns([2, 1])
                 
@@ -86,6 +95,15 @@ def main():
     else:
         st.info("👈 Enter a wine ID in the sidebar to get started!")
         
+        # Example section
+        with st.expander("Need help getting started?"):
+            st.write("""
+                Try using one of these example wine IDs:
+                - wine_123
+                - wine_456
+                - wine_789
+            """)
+    
     # Footer
     st.markdown("""
         ---

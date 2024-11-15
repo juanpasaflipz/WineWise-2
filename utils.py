@@ -7,6 +7,13 @@ import os
 def initialize_pinecone():
     """Initialize Pinecone client with error handling"""
     try:
+        # Debug: Print if API key exists (but not the key itself)
+        st.write("Checking Pinecone API key...")
+        if 'PINECONE_API_KEY' not in os.environ:
+            st.error("PINECONE_API_KEY environment variable is not set")
+            return None
+        
+        st.write("Initializing Pinecone client...")
         # Initialize Pinecone using the new method
         pinecone_client = pinecone.Pinecone(
             api_key=os.environ['PINECONE_API_KEY']
@@ -14,6 +21,7 @@ def initialize_pinecone():
         
         # List available indexes to debug
         try:
+            st.write("Fetching available indexes...")
             indexes = pinecone_client.list_indexes()
             if not indexes:
                 st.error("No indexes found in your Pinecone account. Please create an index first.")
@@ -24,9 +32,12 @@ def initialize_pinecone():
             st.write("Available indexes:", index_names)
             
             # Get the index if it exists
-            target_index = 'wine-embeddings-1eowpvt'
+            target_index = 'wine-embeddings'
+            st.write(f"Attempting to connect to index: {target_index}")
+            
             if target_index in index_names:
                 index = pinecone_client.Index(target_index)
+                st.success("Successfully connected to Pinecone index!")
                 return index
             else:
                 st.error(f"Index '{target_index}' not found. Available indexes: {', '.join(index_names)}")
@@ -38,13 +49,12 @@ def initialize_pinecone():
             
     except Exception as e:
         st.error(f"Failed to connect to Pinecone: {str(e)}")
-        if 'PINECONE_API_KEY' not in os.environ:
-            st.error("PINECONE_API_KEY environment variable is not set")
         return None
 
 def query_similar_wines(index, wine_id, top_k=5):
     """Query Pinecone for similar wines"""
     try:
+        st.write(f"Querying for wine ID: {wine_id}")
         query_response = index.query(
             id=wine_id,
             top_k=top_k,
